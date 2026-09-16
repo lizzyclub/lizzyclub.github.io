@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+  <title>📢 智能叫号器 · 网页版</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+    }
+    body {
+      min-height: 100vh;
+      background: linear-gradient(145deg, #1a2639 0%, #2c3e50 100%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+    }
+    .caller-card {
+      max-width: 720px;
+      width: 100%;
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-radius: 48px;
+      padding: 24px 24px 32px;
+      box-shadow: 0 30px 50px rgba(0, 0, 0, 0.6), inset 0 1px 2px rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      transition: all 0.2s;
+    }
+    h1 {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      color: #f0f3fa;
+      font-weight: 500;
+      font-size: 1.8rem;
+      letter-spacing: 1px;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+      margin-bottom: 18px;
+    }
+    h1 span {
+      background: #3e5a7c;
+      padding: 6px 16px;
+      border-radius: 60px;
+      font-size: 1rem;
+      font-weight: 400;
+      color: #d0e2ff;
+      letter-spacing: 0.5px;
+      box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.3);
+    }
+    .display-number {
+      background: #0b121c;
+      border-radius: 32px;
+      padding: 40px 16px;
+      margin-bottom: 24px;
+      box-shadow: 0 20px 30px -10px black, inset 0 4px 12px rgba(0, 0, 0, 0.8), inset 0 -2px 4px rgba(255, 255, 255, 0.05);
+      border: 1px solid #3a4c62;
+      text-align: center;
+    }
+    .number-label {
+      color: #8fa8c9;
+      font-size: 1rem;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+      font-weight: 400;
+    }
+    .big-number {
+      font-size: 8rem;
+      font-weight: 900;
+      line-height: 1.1;
+      color: #c6e2ff;
+      text-shadow: 0 0 20px #4d9eff, 0 0 40px #0066ff;
+      word-break: break-word;
+      transition: all 0.2s ease;
+      letter-spacing: 6px;
+    }
+    .big-number.small {
+      font-size: 5rem;
+      letter-spacing: 2px;
+    }
+    .input-area {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 24px;
+      align-items: center;
+      justify-content: center;
+    }
+    .input-wrapper {
+      flex: 2 1 200px;
+      display: flex;
+      background: #1d2b3a;
+      border-radius: 100px;
+      padding: 4px;
+      border: 1px solid #3a526b;
+      box-shadow: inset 0 4px 8px rgba(0, 0, 0, 0.6);
+    }
+    .input-wrapper input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      padding: 16px 20px;
+      font-size: 1.4rem;
+      color: white;
+      outline: none;
+      min-width: 0;
+      font-weight: 500;
+      letter-spacing: 1px;
+    }
+    .input-wrapper input::placeholder {
+      color: #6f8aa8;
+      font-weight: 300;
+      font-size: 1rem;
+    }
+    .call-btn {
+      background: #0f6bff;
+      border: none;
+      border-radius: 100px;
+      padding: 14px 28px;
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 10px 20px -5px #0f6bff, 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+      flex: 0 0 auto;
+      letter-spacing: 1px;
+    }
+    .call-btn:active {
+      transform: scale(0.96);
+      box-shadow: 0 5px 10px -3px #0f6bff;
+    }
+    .call-btn:disabled {
+      opacity: 0.5;
+      transform: none;
+      box-shadow: none;
+      pointer-events: none;
+      filter: grayscale(0.6);
+    }
+    .config-panel {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 28px;
+      padding: 20px 20px 18px;
+      margin-bottom: 12px;
+      border: 1px solid #364f68;
+      backdrop-filter: blur(10px);
+    }
+    .config-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+    .config-row:last-child {
+      margin-bottom: 0;
+    }
+    .label-icon {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #bfd5f0;
+      font-weight: 400;
+      font-size: 1rem;
+      width: 110px;
+      flex-shrink: 0;
+    }
+    .label-icon svg {
+      width: 20px;
+      height: 20px;
+      fill: #74a9ff;
+    }
+    .config-input {
+      flex: 1;
+      background: #121e2b;
+      border: 1px solid #304a63;
+      border-radius: 40px;
+      padding: 12px 18px;
+      color: white;
+      font-size: 0.95rem;
+      outline: none;
+      transition: 0.15s;
+      min-width: 150px;
+    }
+    .config-input:focus {
+      border-color: #0f6bff;
+      box-shadow: 0 0 0 3px rgba(15, 107, 255, 0.3);
+    }
+    .template-help {
+      font-size: 0.8rem;
+      color: #7d9cc0;
+      margin-top: 6px;
+      margin-left: 126px;
+      font-style: italic;
+    }
+    .audio-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 8px;
+    }
+    .btn-secondary {
+      background: #273b4f;
+      border: none;
+      border-radius: 40px;
+      padding: 10px 22px;
+      font-size: 0.9rem;
+      color: #d0e2ff;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: 0.15s;
+      border: 1px solid #3c5670;
+    }
+    .btn-secondary:hover {
+      background: #31506b;
+    }
+    .btn-secondary:active {
+      transform: scale(0.97);
+    }
+    .status-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #0f1b2a;
+      border-radius: 30px;
+      padding: 6px 16px 6px 12px;
+      font-size: 0.85rem;
+      color: #9bb9da;
+      border: 1px solid #2e445b;
+    }
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #2ecc71;
+      box-shadow: 0 0 10px #2ecc71;
+    }
+    .status-dot.off {
+      background: #6b7d8f;
+      box-shadow: none;
+    }
+    .footer-note {
+      text-align: center;
+      color: #6b85a3;
+      font-size: 0.8rem;
+      margin-top: 18px;
+      letter-spacing: 0.5px;
+    }
+    .footer-note a {
+      color: #86b0e0;
+      text-decoration: none;
+    }
+    .hidden {
+      display: none !important;
+    }
+    @media (max-width: 520px) {
+      .big-number {
+        font-size: 5rem;
+        letter-spacing: 2px;
+      }
+      .big-number.small {
+        font-size: 3rem;
+      }
+      .caller-card {
+        padding: 20px 16px 24px;
+      }
+      .label-icon {
+        width: 90px;
+        font-size: 0.9rem;
+      }
+      .template-help {
+        margin-left: 0;
+      }
+      h1 {
+        font-size: 1.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="caller-card">
+    <h1>
+      📢 智能叫号器
+      <span>网页版</span>
+    </h1>
+
+    <div class="display-number">
+      <div class="number-label">当前取货号码</div>
+      <div id="bigNumberDisplay" class="big-number">—</div>
+    </div>
+
+    <div class="input-area">
+      <div class="input-wrapper">
+        <input type="text" id="orderInput" placeholder="输入单号，如 A102" autocomplete="off" inputmode="text">
+      </div>
+      <button class="call-btn" id="callBtn" aria-label="语音播报">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+          <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+        </svg>
+        播报
+      </button>
+    </div>
+
+    <div class="config-panel">
+      <div class="config-row">
+        <div class="label-icon">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
+          提示音
+        </div>
+        <input type="file" id="audioFileInput" accept="audio/*" class="config-input" style="padding: 8px 12px; color:#b0c7e0;">
+      </div>
+      <div class="audio-actions">
+        <button class="btn-secondary" id="playTestSoundBtn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+          试听提示音
+        </button>
+        <div class="status-badge" id="audioStatus">
+          <span class="status-dot off" id="audioDot"></span>
+          <span id="audioStatusText">使用默认叮咚</span>
+        </div>
+      </div>
+      <div class="config-row" style="margin-top: 18px;">
+        <div class="label-icon">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.17L4 17.17V4h16v12z"/><path d="M7 9h10v2H7zM7 12h7v2H7z"/></svg>
+          播报模板
+        </div>
+        <input type="text" id="templateInput" class="config-input" value="请 {number} 号顾客到前台取货" placeholder="使用 {number} 代表单号">
+      </div>
+      <div class="template-help">💡 用 {number} 代表单号，例如“请 {number} 号取货”</div>
+    </div>
+
+    <div class="footer-note">
+      ⚡ 一键播报 · 支持蓝牙音箱 · 无广告
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      const orderInput = document.getElementById('orderInput');
+      const callBtn = document.getElementById('callBtn');
+      const bigNumberDisplay = document.getElementById('bigNumberDisplay');
+      const audioFileInput = document.getElementById('audioFileInput');
+      const playTestSoundBtn = document.getElementById('playTestSoundBtn');
+      const templateInput = document.getElementById('templateInput');
+      const audioStatusText = document.getElementById('audioStatusText');
+      const audioDot = document.getElementById('audioDot');
+
+      let customAudio = null;
+      let customAudioUrl = null;
+      let audioContext = null;
+
+      window.addEventListener('beforeunload', function() {
+        if (customAudioUrl) {
+          URL.revokeObjectURL(customAudioUrl);
+        }
+      });
+
+      function updateBigDisplay(text) {
+        if (!text || text.trim() === '') {
+          bigNumberDisplay.textContent = '—';
+          bigNumberDisplay.classList.remove('small');
+          return;
+        }
+        const displayText = text.trim().toUpperCase();
+        bigNumberDisplay.textContent = displayText;
+        if (displayText.length > 6) {
+          bigNumberDisplay.classList.add('small');
+        } else {
+          bigNumberDisplay.classList.remove('small');
+        }
+      }
+
+      function playDefaultDingDong() {
+        return new Promise((resolve) => {
+          try {
+            if (!audioContext) {
+              audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioContext.state === 'suspended') {
+              audioContext.resume().then(() => {
+                synthesizeDingDong(audioContext, resolve);
+              });
+            } else {
+              synthesizeDingDong(audioContext, resolve);
+            }
+          } catch (e) {
+            console.warn('Web Audio 初始化失败', e);
+            resolve();
+          }
+        });
+      }
+
+      function synthesizeDingDong(ctx, onEnd) {
+        const now = ctx.currentTime;
+        const masterGain = ctx.createGain();
+        masterGain.gain.value = 0.5;
+        masterGain.connect(ctx.destination);
+
+        const osc1 = ctx.createOscillator();
+        const gain1 = ctx.createGain();
+        osc1.type = 'sine';
+        osc1.frequency.value = 880;
+        gain1.gain.setValueAtTime(0.4, now);
+        gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+        osc1.connect(gain1);
+        gain1.connect(masterGain);
+        osc1.start(now);
+        osc1.stop(now + 0.35);
+
+        const osc2 = ctx.createOscillator();
+        const gain2 = ctx.createGain();
+        osc2.type = 'sine';
+        osc2.frequency.value = 523.25;
+        gain2.gain.setValueAtTime(0.0, now + 0.1);
+        gain2.gain.linearRampToValueAtTime(0.4, now + 0.15);
+        gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+        osc2.connect(gain2);
+        gain2.connect(masterGain);
+        osc2.start(now + 0.1);
+        osc2.stop(now + 0.65);
+
+        osc2.onended = () => {
+          if (onEnd) onEnd();
+        };
+        setTimeout(() => {
+          if (onEnd) onEnd();
+        }, 800);
+      }
+
+      async function playAlertSound() {
+        if (customAudio) {
+          try {
+            customAudio.currentTime = 0;
+            await customAudio.play();
+            return new Promise((resolve) => {
+              const onEnded = () => {
+                customAudio.removeEventListener('ended', onEnded);
+                resolve();
+              };
+              customAudio.addEventListener('ended', onEnded);
+              setTimeout(() => {
+                customAudio.removeEventListener('ended', onEnded);
+                resolve();
+              }, 3000);
+            });
+          } catch (e) {
+            console.warn('自定义音频播放失败，使用默认叮咚', e);
+            return playDefaultDingDong();
+          }
+        } else {
+          return playDefaultDingDong();
+        }
+      }
+
+      function speakText(text) {
+        return new Promise((resolve) => {
+          if (!text || text.trim() === '') {
+            resolve();
+            return;
+          }
+          window.speechSynthesis.cancel();
+          const utterance = new SpeechSynthesisUtterance(text);
+          utterance.lang = 'zh-CN';
+          utterance.rate = 0.95;
+          utterance.pitch = 1.0;
+          utterance.volume = 1.0;
+          const voices = window.speechSynthesis.getVoices();
+          const zhVoice = voices.find(v => v.lang === 'zh-CN' || v.lang.includes('zh'));
+          if (zhVoice) utterance.voice = zhVoice;
+          
+          utterance.onended = () => {
+            resolve();
+          };
+          utterance.onerror = (e) => {
+            console.warn('语音合成出错:', e);
+            resolve();
+          };
+          window.speechSynthesis.speak(utterance);
+          setTimeout(() => {
+            resolve();
+          }, 8000);
+        });
+      }
+
+      function generateAnnouncement(number) {
+        let template = templateInput.value.trim();
+        if (!template) {
+          template = '请 {number} 号顾客到前台取货';
+        }
+        return template.replace(/\{number\}/gi, number);
+      }
+
+      async function handleCall() {
+        const rawNumber = orderInput.value.trim();
+        if (!rawNumber) {
+          alert('请输入单号');
+          orderInput.focus();
+          return;
+        }
+
+        updateBigDisplay(rawNumber);
+
+        callBtn.disabled = true;
+        callBtn.style.opacity = '0.7';
+
+        try {
+          await playAlertSound();
+          const announcement = generateAnnouncement(rawNumber);
+          await speakText(announcement);
+        } catch (e) {
+          console.error('播报过程出错:', e);
+        } finally {
+          callBtn.disabled = false;
+          callBtn.style.opacity = '1';
+        }
+      }
+
+      callBtn.addEventListener('click', handleCall);
+
+      orderInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          handleCall();
+        }
+      });
+
+      orderInput.addEventListener('input', (e) => {
+        updateBigDisplay(e.target.value.trim());
+      });
+
+      audioFileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        if (customAudioUrl) {
+          URL.revokeObjectURL(customAudioUrl);
+          customAudioUrl = null;
+        }
+        if (customAudio) {
+          customAudio.pause();
+          customAudio = null;
+        }
+
+        const url = URL.createObjectURL(file);
+        customAudioUrl = url;
+        const audio = new Audio(url);
+        audio.preload = 'auto';
+        audio.addEventListener('error', (err) => {
+          console.warn('音频加载失败', err);
+          customAudio = null;
+          if (customAudioUrl) {
+            URL.revokeObjectURL(customAudioUrl);
+            customAudioUrl = null;
+          }
+          audioStatusText.textContent = '自定义音频无效，使用默认叮咚';
+          audioDot.classList.add('off');
+        });
+        customAudio = audio;
+
+        audioStatusText.textContent = '已加载自定义提示音';
+        audioDot.classList.remove('off');
+      });
+
+      playTestSoundBtn.addEventListener('click', async () => {
+        playTestSoundBtn.disabled = true;
+        try {
+          await playAlertSound();
+        } catch (e) {
+          console.warn(e);
+        } finally {
+          playTestSoundBtn.disabled = false;
+        }
+      });
+
+      if (window.speechSynthesis) {
+        window.speechSynthesis.getVoices();
+        window.speechSynthesis.onvoiceschanged = () => {};
+      }
+
+      updateBigDisplay('—');
+    })();
+  </script>
+</body>
+</html>
