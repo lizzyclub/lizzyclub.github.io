@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>美团外卖叫号器</title>
+    <style>
+        body {
+            background-color: #1a1a1a;
+            color: white;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        h1 {
+            color: #FFD100; /* 美团黄 */
+            font-size: 24px;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px rgba(255, 209, 0, 0.5);
+        }
+        .input-box {
+            width: 100%;
+            max-width: 400px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        input {
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #333;
+            background-color: #2a2a2a;
+            color: white;
+            font-size: 18px;
+            outline: none;
+            text-align: center;
+        }
+        input:focus {
+            border-color: #FFD100;
+        }
+        button {
+            padding: 15px;
+            border-radius: 10px;
+            border: none;
+            background-color: #FFD100;
+            color: #000;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(255, 209, 0, 0.3);
+            transition: 0.2s;
+        }
+        button:active {
+            transform: scale(0.95);
+        }
+        .display-area {
+            width: 100%;
+            max-width: 400px;
+            min-height: 120px;
+            background-color: #000;
+            border: 2px solid #FFD100;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            text-align: center;
+            font-size: 36px;
+            font-weight: bold;
+            color: #FFD100;
+            word-break: break-all;
+            box-shadow: 0 0 20px rgba(255, 209, 0, 0.2);
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🛵 外卖叫号播报</h1>
+
+    <!-- 大号显示区域，给顾客看 -->
+    <div class="display-area" id="screenText">等待叫号...</div>
+
+    <div class="input-box">
+        <!-- 输入文本框 -->
+        <input type="text" id="textInput" placeholder="输入顾客听的文字，如：请A102号顾客取餐" />
+        <!-- 播报按钮 -->
+        <button onclick="startAnnouncement()">🔊 点我播报</button>
+    </div>
+
+    <script>
+        let audioCtx = null;
+
+        // 1. 生成“美团风格”的叮咚提示音（纯代码合成，无需外部文件）
+        function playDingDong() {
+            return new Promise((resolve) => {
+                try {
+                    if (!audioCtx) {
+                        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    }
+                    if (audioCtx.state === 'suspended') {
+                        audioCtx.resume();
+                    }
+                    
+                    const now = audioCtx.currentTime;
+                    
+                    // 高音“叮”
+                    const osc1 = audioCtx.createOscillator();
+                    const gain1 = audioCtx.createGain();
+                    osc1.type = 'sine';
+                    osc1.frequency.value = 880;
+                    gain1.gain.setValueAtTime(0.5, now);
+                    gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                    osc1.connect(gain1);
+                    gain1.connect(audioCtx.destination);
+                    osc1.start(now);
+                    osc1.stop(now + 0.3);
+
+                    // 低音“咚”
+                    const osc2 = audioCtx.createOscillator();
+                    const gain2 = audioCtx.createGain();
+                    osc2.type = 'sine';
+                    osc2.frequency.value = 523.25;
+                    gain2.gain.setValueAtTime(0, now + 0.1);
+                    gain2.gain.linearRampToValueAtTime(0.5, now + 0.15);
+                    gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
+                    osc2.connect(gain2);
+                    gain2.connect(audioCtx.destination);
+                    osc2.start(now + 0.1);
+                    osc2.stop(now + 0.6);
+
+                    // 等“咚”结束后，通知下一步
+                    osc2.onended = () => {
+                        // 【苹果手机核心修复】关闭 AudioContext，把音频通道还给语音播报！
+                        audioCtx.close().then(() => {
+                            audioCtx = null;
+                            resolve();
+                        });
+                    };
+                } catch (e) {
+                    console.warn('提示音失败', e);
+                    resolve();
+                }
+            });
+        }
+
+        // 2. 语音播报文字
+        function speakText(text) {
+            return new Promise((resolve) => {
+                if (!text.trim()) { resolve(); return; }
+                
+                // 取消上一次还没播完的声音
+                window.speechSynthesis.cancel();
+                
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'zh-CN';
+                utterance.rate = 1.0; // 语速
+                utterance.pitch = 1.1; // 音调稍微高一点，更像外卖叫号
+                utterance.volume = 1.0;
+                
+                // 尝试选个中文语音
+                const voices = window.speechSynthesis.getVoices();
+                const zhVoice = voices.find(v => v.lang.includes('zh'));
+                if (zhVoice) utterance.voice = zhVoice;
+
+                utterance.onended = () => resolve();
+                utterance.onerror = () => resolve();
+
+                window.speechSynthesis.speak(utterance);
+            });
+        }
+
+        // 3. 主流程：点击按钮后触发
+        async function startAnnouncement() {
+            const text = document.getElementById('textInput').value.trim();
+            if (!text) {
+                alert('请先在文本框输入要播报的内容！');
+                return;
+            }
+
+            // 更新大屏幕显示
+            document.getElementById('screenText').textContent = text;
+
+            // 第一步：播放美团叮咚声
+            await playDingDong();
+
+            // 第二步：等待300毫秒，让苹果系统“喘口气”
+            await new Promise(r => setTimeout(r, 300));
+
+            // 第三步：播报人声
+            await speakText(text);
+        }
+    </script>
+</body>
+</html>
